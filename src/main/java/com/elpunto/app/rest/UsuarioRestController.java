@@ -1,8 +1,13 @@
 package com.elpunto.app.rest;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -14,7 +19,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.elpunto.app.interfaceService.IUsuarioService;
 import com.elpunto.app.model.Usuario;
@@ -87,7 +94,7 @@ public class UsuarioRestController {
 				usuarioActual.setApellidos(u.getApellidos());
 				usuarioActual.setTelefono(u.getTelefono());
 				usuarioActual.setRol(u.getRol());
-				
+
 				usuarioActualizado = usuarioService.guardarUsuario(usuarioActual);
 			} catch (DataAccessException e) {
 				response.put("mensaje", "Error al realizar el registro a la base de datos.");
@@ -99,5 +106,42 @@ public class UsuarioRestController {
 
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
 		}
+	}
+
+	@PostMapping("/upload")
+	public ResponseEntity<?> subirFoto(@RequestParam("foto") MultipartFile foto, @RequestParam("id") Integer id) {
+		Usuario usuario = usuarioService.buscarUsuario(id);
+		Map<String, Object> response = new HashMap<>();
+		if (!foto.isEmpty()) {
+			String nombreFoto = UUID.randomUUID().toString() + "_" + foto.getOriginalFilename().replace(" ", "");
+			Path rutaFoto = Paths.get("fotos\\foto_perfil").resolve(nombreFoto).toAbsolutePath();
+			try {
+				Files.copy(foto.getInputStream(), rutaFoto);
+			} catch (Exception e) {
+				response.put("mensaje", "Error al subir la imagen");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			/*
+			 * Acá borramos la foto anterior del usuario en caso que suba una
+			 * nueva(Actualizar foto)
+			 */
+			String nombreFotoAnterior = usuario.getFoto();
+			if (nombreFotoAnterior != null && nombreFotoAnterior.length() > 0) {
+				Path rutaFotoAnterior = Paths.get("fotos\\foto_perfil").resolve(nombreFotoAnterior).toAbsolutePath();
+				File archivoFotoAnterior = rutaFotoAnterior.toFile();
+				if (archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
+					archivoFotoAnterior.delete();
+				}
+			}
+			// Guardamos foto y retornamos usuario + mensaje
+			usuario.setFoto(nombreFoto);
+			usuarioService.guardarUsuario(usuario);
+			response.put("usuario", usuario);
+			response.put("mensaje", "Ha subido correctamente la imagen" + nombreFoto);
+		} else {
+			response.put("mensaje", "El campo foto no puede estar vacío");
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
+		}
+		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
 	}
 }
