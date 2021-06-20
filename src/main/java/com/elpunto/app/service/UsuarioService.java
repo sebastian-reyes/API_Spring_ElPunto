@@ -35,5 +35,10 @@ public class UsuarioService implements IUsuarioService{
 	public Usuario buscarUsuario(int id) {
 		return usuarioDao.findById(id).orElse(null);
 	}
+
+	@Override
+	public Usuario login(String email, String password) {
+		return usuarioDao.findByEmailAndPassword(email, password).orElse(null);
+	}
 	
 }

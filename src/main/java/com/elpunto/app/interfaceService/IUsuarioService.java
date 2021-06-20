@@ -9,4 +9,5 @@ public interface IUsuarioService {
 	public Usuario guardarUsuario(Usuario u);
 	public void eliminarUsuario(int id);
 	public Usuario buscarUsuario(int id);
+	public Usuario login(String email, String password);
 }

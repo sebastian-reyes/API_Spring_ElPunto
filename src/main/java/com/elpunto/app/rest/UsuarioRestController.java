@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.elpunto.app.interfaceService.IUsuarioService;
+import com.elpunto.app.model.Login;
 import com.elpunto.app.model.Usuario;
 
 @RestController
@@ -148,31 +149,53 @@ public class UsuarioRestController {
 		}
 		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
 	}
-	
-	//Mostrar foto de usuario
+
+	// Mostrar foto de usuario
 	@GetMapping("/foto/{id}")
-	public ResponseEntity<?> obtenerImagenUsuario(@PathVariable Integer id) throws IOException{
+	public ResponseEntity<?> obtenerImagenUsuario(@PathVariable Integer id) throws IOException {
 		Usuario u = null;
 		String foto = null;
 		Map<String, Object> response = new HashMap<>();
 		try {
 			u = usuarioService.buscarUsuario(id);
-			if(u == null) {
+			if (u == null) {
 				response.put("mensaje", "El usuario con id " + id.toString() + " no existe en la base de datos");
 				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
-			}else {
+			} else {
 				foto = u.getFoto();
-				if(foto == null) {
+				if (foto == null) {
 					response.put("mensaje", "El usuario que seleccionó no cuenta con foto de perfil");
 					return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
-				}else {
+				} else {
 					File img = new File("fotos/foto_perfil/" + foto);
 					return ResponseEntity.ok()
 							.contentType(MediaType.valueOf(FileTypeMap.getDefaultFileTypeMap().getContentType(img)))
 							.body(Files.readAllBytes(img.toPath()));
 				}
 			}
-		}catch (DataAccessException e) {
+		} catch (DataAccessException e) {
+			response.put("mensaje", "Error al realizar la consulta a la base de datos.");
+			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	// Login
+	@PostMapping("/login")
+	public ResponseEntity<?> login(@RequestBody Login log) {
+		Usuario usuario = null;
+		Map<String, Object> response = new HashMap<>();
+		try {
+			usuario = usuarioService.login(log.getEmail(), log.getPassword());
+			if (usuario == null) {
+				response.put("mensaje", "El correo o la contraseña con incorrectos.");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
+			}else {
+				response.put("valido", true);
+				response.put("usuario", usuario);
+				return new ResponseEntity<>(usuario, HttpStatus.OK);
+			}
+		} catch (DataAccessException e) {
 			response.put("mensaje", "Error al realizar la consulta a la base de datos.");
 			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
