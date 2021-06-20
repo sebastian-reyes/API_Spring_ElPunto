@@ -1,6 +1,7 @@
 package com.elpunto.app.rest;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -9,9 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.activation.FileTypeMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -143,5 +147,35 @@ public class UsuarioRestController {
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
 		}
 		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
+	}
+	
+	//Mostrar foto de usuario
+	@GetMapping("/foto/{id}")
+	public ResponseEntity<?> obtenerImagenUsuario(@PathVariable Integer id) throws IOException{
+		Usuario u = null;
+		String foto = null;
+		Map<String, Object> response = new HashMap<>();
+		try {
+			u = usuarioService.buscarUsuario(id);
+			if(u == null) {
+				response.put("mensaje", "El usuario con id " + id.toString() + " no existe en la base de datos");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
+			}else {
+				foto = u.getFoto();
+				if(foto == null) {
+					response.put("mensaje", "El usuario que seleccionó no cuenta con foto de perfil");
+					return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
+				}else {
+					File img = new File("fotos/foto_perfil/" + foto);
+					return ResponseEntity.ok()
+							.contentType(MediaType.valueOf(FileTypeMap.getDefaultFileTypeMap().getContentType(img)))
+							.body(Files.readAllBytes(img.toPath()));
+				}
+			}
+		}catch (DataAccessException e) {
+			response.put("mensaje", "Error al realizar la consulta a la base de datos.");
+			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 }
