@@ -3,11 +3,13 @@ package com.elpunto.app.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.elpunto.app.dao.ICategoriaDao;
 import com.elpunto.app.interfaceService.ICategoriaService;
 import com.elpunto.app.model.Categoria;
 
+@Service
 public class CategoriaService implements ICategoriaService{
 
 	@Autowired
