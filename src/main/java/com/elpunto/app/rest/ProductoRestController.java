@@ -72,7 +72,7 @@ public class ProductoRestController {
 				}
 			}
 		} catch (DataAccessException e) {
-			response.put("mensaje", "Error al realizar la consulta del registro.");
+			response.put("mensaje", "Error al realizar la consulta en la base de datos.");
 			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
