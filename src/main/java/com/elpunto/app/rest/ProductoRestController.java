@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.elpunto.app.interfaceService.IProductoService;
 import com.elpunto.app.model.Producto;
@@ -97,6 +99,39 @@ public class ProductoRestController {
 		response.put("producto", nuevoProducto);
 		response.put("mensaje", "El producto fue creado correctamente.");
 		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
+	}
+
+	@PostMapping("/upload")
+	public ResponseEntity<?> subirFotoProducto(@RequestParam("foto") MultipartFile foto,
+			@RequestParam("id") Integer id) {
+		Producto producto = productoService.buscarProducto(id);
+		Map<String, Object> response = new HashMap<>();
+		if (!foto.isEmpty()) {
+			String nombreFoto = foto.getOriginalFilename().replace(" ", "");
+			Path rutaFoto = Paths.get("fotos\\productos").resolve(nombreFoto).toAbsolutePath();
+			try {
+				Files.copy(foto.getInputStream(), rutaFoto);
+			} catch (Exception e) {
+				response.put("mensaje", "Error al subir la imagen");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+			String nombreFotoAnterior = producto.getFoto();
+			if (nombreFotoAnterior != null && nombreFotoAnterior.length() > 0) {
+				Path rutaFotoAnterior = Paths.get("fotos\\productos").resolve(nombreFotoAnterior).toAbsolutePath();
+				File archivoFotoAnterior = rutaFotoAnterior.toFile();
+				if (archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
+					archivoFotoAnterior.delete();
+				}
+			}
+			producto.setFoto(nombreFoto);
+			productoService.guardarProducto(producto);
+			response.put("producto", producto);
+			response.put("mensaje", "Ha subido correctamente la imagen" + nombreFoto);
+		} else {
+			response.put("mensaje", "El campo foto no puede estar vacío");
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
+		}
+		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
 	}
 
 	@DeleteMapping("/eliminar")
