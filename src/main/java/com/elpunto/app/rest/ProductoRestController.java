@@ -15,6 +15,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -34,11 +36,11 @@ public class ProductoRestController {
 		Map<String, Object> response = new HashMap<>();
 		try {
 			p = productoService.buscarProducto(id);
-			if(p == null) {
+			if (p == null) {
 				response.put("mensaje", "El producto con id " + id.toString() + " no existe en la base de datos");
 				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
-			}else {
-				return new ResponseEntity<>(p,HttpStatus.OK);
+			} else {
+				return new ResponseEntity<>(p, HttpStatus.OK);
 			}
 		} catch (DataAccessException e) {
 			response.put("mensaje", "Error al realizar la consulta a la base de datos.");
@@ -46,8 +48,8 @@ public class ProductoRestController {
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
-	//Mostar Foto
+
+	// Mostar Foto
 	@GetMapping("/foto/{id}")
 	public ResponseEntity<?> obtenerImagenProducto(@PathVariable Integer id) throws IOException {
 		Producto p = null;
@@ -56,7 +58,7 @@ public class ProductoRestController {
 
 		try {
 			p = productoService.buscarProducto(id);
-			if(p == null) {
+			if (p == null) {
 				response.put("mensaje", "El producto con id " + id.toString() + " no existe en la base de datos");
 				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
 			} else {
@@ -76,5 +78,21 @@ public class ProductoRestController {
 			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	@PostMapping("/registro")
+	public ResponseEntity<?> registrarProducto(@RequestBody Producto p) {
+		Producto nuevoProducto = null;
+		Map<String, Object> response = new HashMap<>();
+		try {
+			nuevoProducto = productoService.guardarProducto(p);
+		} catch (DataAccessException e) {
+			response.put("mensaje", "Error al realizar el registro a la base de datos.");
+			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		response.put("producto", nuevoProducto);
+		response.put("mensaje", "El producto fue creado correctamente.");
+		return new ResponseEntity<Map<String,Object>>(response,HttpStatus.OK);
 	}
 }
