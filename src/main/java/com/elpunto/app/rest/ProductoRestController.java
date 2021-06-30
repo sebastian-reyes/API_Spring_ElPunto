@@ -3,6 +3,8 @@ package com.elpunto.app.rest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -93,6 +96,36 @@ public class ProductoRestController {
 		}
 		response.put("producto", nuevoProducto);
 		response.put("mensaje", "El producto fue creado correctamente.");
-		return new ResponseEntity<Map<String,Object>>(response,HttpStatus.OK);
+		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
+	}
+
+	@DeleteMapping("/eliminar")
+	public ResponseEntity<?> eliminarProducto(@PathVariable Integer id) {
+		Producto p = null;
+		Map<String, Object> response = new HashMap<>();
+		try {
+			p = productoService.buscarProducto(id);
+			if (p == null) {
+				response.put("mensaje", "El producto con id " + id.toString() + " no existe en la base de datos");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
+			} else {
+				String nombreFoto = p.getFoto();
+				if (nombreFoto != null && nombreFoto.length() > 0) {
+					Path rutaFoto = Paths.get("fotos\\productos").resolve(nombreFoto).toAbsolutePath();
+					File archivoFoto = rutaFoto.toFile();
+					if (archivoFoto.exists() && archivoFoto.canRead()) {
+						archivoFoto.delete();
+					}
+				}
+				productoService.eliminarProducto(id);
+			}
+		} catch (DataAccessException e) {
+			response.put("mensaje", "Error al realizar la eliminación del registro.");
+			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		response.put("mensaje", "Producto eliminado correctamente");
+		response.put("Producto eliminado", p);
+		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
 	}
 }
