@@ -57,16 +57,16 @@ public class CategoriaRestController {
 	}
 
 	@GetMapping("/foto/{id}")
-	public ResponseEntity<?> obtenerImagenCategoria(@PathVariable Integer id) throws IOException{
+	public ResponseEntity<?> obtenerImagenCategoria(@PathVariable Integer id) throws IOException {
 		Categoria c = null;
 		String foto = null;
 		Map<String, Object> response = new HashMap<>();
 		try {
 			c = categoriaService.buscarCategoria(id);
-			if(c == null) {
+			if (c == null) {
 				response.put("mensaje", "La categpría con id " + id.toString() + " no existe en la base de datos");
 				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
-			}else {
+			} else {
 				foto = c.getFoto_cat();
 				if (foto == null) {
 					response.put("mensaje", "La categoría que seleccionó no cuenta con foto.");
