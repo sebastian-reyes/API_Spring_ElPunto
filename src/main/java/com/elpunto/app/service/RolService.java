@@ -7,7 +7,9 @@ import com.elpunto.app.interfaceService.IRolService;
 import com.elpunto.app.model.Rol;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class RolService implements IRolService {
 
     @Autowired
