@@ -71,7 +71,15 @@ public class UsuarioRestController {
 		Usuario nuevoUsuario = null;
 		Map<String, Object> response = new HashMap<>();
 		try {
-			nuevoUsuario = usuarioService.guardarUsuario(u);
+			if (u.getNombres().replace(" ", "").length() > 0 && u.getApellidos().replace(" ", "").length() > 0
+					&& u.getEmail().replace(" ", "").length() > 0 && u.getPassword().replace(" ", "").length() > 0
+					&& u.getDni().replace(" ", "").length() > 0 && u.getTelefono().replace(" ", "").length() > 0) {
+				nuevoUsuario = usuarioService.guardarUsuario(u);
+			} else {
+				response.put("mensaje", "No pueden haber campos vacíos.");
+				return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
+			}
+
 		} catch (DataAccessException e) {
 			response.put("mensaje", "Error al realizar el registro a la base de datos.");
 			response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
@@ -93,15 +101,24 @@ public class UsuarioRestController {
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
 		} else {
 			try {
-				usuarioActual.setEmail(u.getEmail());
-				usuarioActual.setPassword(u.getPassword());
-				usuarioActual.setDni(u.getDni());
-				usuarioActual.setNombres(u.getNombres());
-				usuarioActual.setApellidos(u.getApellidos());
-				usuarioActual.setTelefono(u.getTelefono());
-				usuarioActual.setRol(u.getRol());
 
-				usuarioActualizado = usuarioService.guardarUsuario(usuarioActual);
+				if (u.getNombres().replace(" ", "").length() > 0 && u.getApellidos().replace(" ", "").length() > 0
+						&& u.getEmail().replace(" ", "").length() > 0 && u.getPassword().replace(" ", "").length() > 0
+						&& u.getDni().replace(" ", "").length() > 0 && u.getTelefono().replace(" ", "").length() > 0) {
+					usuarioActual.setEmail(u.getEmail());
+					usuarioActual.setPassword(u.getPassword());
+					usuarioActual.setDni(u.getDni());
+					usuarioActual.setNombres(u.getNombres());
+					usuarioActual.setApellidos(u.getApellidos());
+					usuarioActual.setTelefono(u.getTelefono());
+					usuarioActual.setRol(u.getRol());
+
+					usuarioActualizado = usuarioService.guardarUsuario(usuarioActual);
+				} else {
+					response.put("mensaje", "No pueden haber campos vacíos para la edición.");
+					return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
+				}
+
 			} catch (DataAccessException e) {
 				response.put("mensaje", "Error al realizar la edición al usuario.");
 				response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
