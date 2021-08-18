@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,5 +49,35 @@ public class PedidoVentaRestController {
             response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
             return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @PutMapping("/anular/{id}")
+    public ResponseEntity<?> anularPedido(@PathVariable Integer id) {
+        PedidoVenta pAnulado = null;
+        PedidoVenta pVenta = service.buscarPedidoVenta(id);
+        Map<String, Object> response = new HashMap<>();
+        if (pVenta == null) {
+            response.put("mensaje", "El pedido de venta con id: " + id.toString() + " no existe en la base de datos");
+            return new ResponseEntity<Map<String, Object>>(response, HttpStatus.NOT_FOUND);
+        } else {
+            try {
+                if (pVenta.getEstado().toLowerCase().equals("entregado")
+                        || pVenta.getEstado().toLowerCase().equals("anulado")) {
+                    response.put("mensaje", "No se puede anular este pedido de venta.");
+                    response.put("estado_pedido", pVenta.getEstado());
+                    return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
+                } else {
+                    pVenta.setEstado("ANULADO");
+                    pAnulado = service.guardPedidoVenta(pVenta);
+                }
+            } catch (DataAccessException e) {
+                response.put("mensaje", "Error al anular el pedido.");
+                response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+                return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+        response.put("mensaje", "El pedido fue anulado.");
+        response.put("pedido_anulado", pAnulado);
+        return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
     }
 }

@@ -26,11 +26,6 @@ public class PedidoVentaService implements IPedidoVentaService{
     }
 
     @Override
-    public void anularPedido(int id) {
-        //Método aún por implementar...
-    }
-
-    @Override
     public PedidoVenta buscarPedidoVenta(int id) {
         return dao.findById(id).orElse(null);
     }
