@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.elpunto.app.interfaceService.IPedidoVentaService;
+import com.elpunto.app.interfaceService.IProductoService;
+import com.elpunto.app.model.DetallePedidoVenta;
 import com.elpunto.app.model.PedidoVenta;
+import com.elpunto.app.model.Producto;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -25,6 +28,9 @@ public class PedidoVentaRestController {
 
     @Autowired
     IPedidoVentaService service;
+
+    @Autowired
+    IProductoService productoService;
 
     @GetMapping
     public ResponseEntity<?> listarPedidos() {
@@ -54,12 +60,32 @@ public class PedidoVentaRestController {
     }
 
     @PostMapping("/crear")
-    public ResponseEntity<?> crearPedidoVenta(@RequestBody PedidoVenta pv){
+    public ResponseEntity<?> crearPedidoVenta(@RequestBody PedidoVenta pv) {
         Map<String, Object> response = new HashMap<>();
         pv.setEstado("EN ENTREGA");
+        List<DetallePedidoVenta> lstDetallePedidoVentas = pv.getDetalleVenta();
+        for (DetallePedidoVenta objDetallePedidoVenta : lstDetallePedidoVentas) {
+            Producto pRequest = objDetallePedidoVenta.getProducto();
+            int cantidad = objDetallePedidoVenta.getCantidad();
+            int idProd = pRequest.getId_producto();
+            Producto pReal = productoService.buscarProducto(idProd);
+            if (pReal.getStock_min() >= pReal.getStock_act()) {
+                response.put("mensaje", "El producto " + pReal.getNombre() + " no se encuentra en stock");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            } else if (cantidad > pReal.getStock_act()) {
+                response.put("mensaje",
+                        "El producto " + pReal.getNombre() + " no cuenta con la cantidad que usted desea.");
+                response.put("cantidad_actual", pReal.getStock_act());
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            } else {
+                int pStockReal = pReal.getStock_act() - cantidad;
+                pReal.setStock_act(pStockReal);
+                productoService.guardarProducto(pReal);
+            }
+        }
         service.guardPedidoVenta(pv);
         response.put("mensaje", "Pedido registrado satisfactoriamente.");
-        return new ResponseEntity<>(response,HttpStatus.CREATED);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PutMapping("/anular/{id}")
